@@ -85,7 +85,7 @@
 				// initialize caustic-receiving pixel positions
 				float P_Gy[N];
 				for ( int x=-N_HALF; x<=N_HALF; x++ ) {
-        			P_Gy[x] = l.P_G.y + x;
+        			P_Gy[x+N_HALF] = l.P_G.y + x;
    				};
 
 				// for each sample on the height field
