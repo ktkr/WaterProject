@@ -38,7 +38,9 @@
 			v2f vert (appdata v)
 			{
 				v2f o;
-				o.vertex = UnityObjectToClipPos(v.vertex);
+				float4 temp = tex2Dlod(_MainTex, float4(v.uv.xy,0,0));
+				temp += v.vertex;
+				o.vertex = UnityObjectToClipPos(temp);
 				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
 				UNITY_TRANSFER_FOG(o,o.vertex);
 				return o;
