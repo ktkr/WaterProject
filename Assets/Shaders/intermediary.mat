@@ -7,7 +7,7 @@ Material:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_Name: intermediary
-  m_Shader: {fileID: 4800000, guid: e731c658586584efb9a5b47308bd7063, type: 3}
+  m_Shader: {fileID: 4800000, guid: 2e82e8e9851b1466aa114a36e4bf9250, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -54,13 +54,19 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _SelfTexture2D:
+        m_Texture: {fileID: 8600000, guid: 71c849c5c527049a8a8fcc3549189b16, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _Tex:
         m_Texture: {fileID: 2800000, guid: 6e2c8882da2c40342b1d2dd445200ca4, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
+    - _Atten: 0.995
     - _BumpScale: 1
     - _Cutoff: 0.5
+    - _DeltaUV: 3
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _Du: 1
@@ -74,6 +80,7 @@ Material:
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
+    - _S2: 0.2
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1

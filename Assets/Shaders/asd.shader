@@ -3,6 +3,7 @@
 	Properties
 	{
 		_MainTex ("Texture", 2D) = "white" {}
+		_HeightMultiplier ("HeightMultiplier", Range(0.1,0.5)) = 0.5
 	}
 	SubShader
 	{
@@ -34,13 +35,14 @@
 
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
-			
+			float _HeightMultiplier;
 			v2f vert (appdata v)
 			{
 				v2f o;
 				float4 temp = tex2Dlod(_MainTex, float4(v.uv.xy,0,0));
-				temp += v.vertex;
-				o.vertex = UnityObjectToClipPos(temp);
+				
+				v.vertex += float4(0, temp.x*_HeightMultiplier, 0, 0);
+				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
 				UNITY_TRANSFER_FOG(o,o.vertex);
 				return o;
