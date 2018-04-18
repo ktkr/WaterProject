@@ -9,7 +9,7 @@ Properties
 	//Attenuation value causes dropoff in wave energy
     _Atten("Attenuation", Range(0.0, 1.0)) = 0.995
 	//Unit distance from current location
-    _DeltaUV("Delta UV", Float) = 1
+    _DeltaUV("Delta UV", Float) = 3
 }
 
 CGINCLUDE
