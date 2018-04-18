@@ -1,4 +1,6 @@
-﻿Shader "Unlit/CausticPass1"
+﻿// Upgrade NOTE: replaced 'glstate.matrix.texture[0]' with 'UNITY_MATRIX_TEXTURE0'
+
+Shader "Unlit/CausticPass1"
 {
 	Properties
 	{
@@ -56,7 +58,7 @@
 				Pass1In input;
 				input.P_G = v.uv;
 				// refraction direction below should be from a rest heightfield a.k.a flat one
-				input.P_C = input.P_G + h; //*L_refr_dir;
+				input.P_C = input.P_G + h * mul(UNITY_MATRIX_TEXTURE0, v.vertex); //*L_refr_dir;
 				return input;
 				//v2f o;
 				//o.vertex = UnityObjectToClipPos(v.vertex);
