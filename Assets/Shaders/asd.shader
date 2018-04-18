@@ -7,7 +7,9 @@
 	}
 	SubShader
 	{
-		Tags { "RenderType"="Opaque" }
+		Tags { "Queue"="Transparent" "RenderType"="Transparent" }
+		Blend SrcAlpha OneMinusSrcAlpha
+        AlphaTest Greater 0.1
 		LOD 100
 
 		Pass
@@ -51,9 +53,13 @@
 			fixed4 frag (v2f i) : SV_Target
 			{
 				// sample the texture
-				fixed4 col = tex2D(_MainTex, i.uv);
+				float4 col = tex2D(_MainTex, i.uv);
+				col += float4(0,0,1,0);
+				if(col.a < 0.1) discard;
+            	else col.a = 0.3;
 				// apply fog
-				UNITY_APPLY_FOG(i.fogCoord, col);
+				//UNITY_APPLY_FOG(i.fogCoord, col);
+				//return col;
 				return col;
 			}
 			ENDCG
