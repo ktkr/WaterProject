@@ -26,6 +26,7 @@ Material:
         m_Texture: {fileID: 8600000, guid: 71c849c5c527049a8a8fcc3549189b16, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    m_Floats: []
+    m_Floats:
+    - _MainTex: 256
     m_Colors:
-    - _DiffuseCol: {r: 0.16911766, g: 0.22631924, b: 0.33823532, a: 1}
+    - _DiffuseCol: {r: 0.26005623, g: 0.35613587, b: 0.5441177, a: 1}

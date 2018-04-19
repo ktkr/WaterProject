@@ -3,6 +3,8 @@
 	Properties
 	{
 		_MainTex ("Texture", 2D) = "white" {}
+		_MainTex ("TextureWidth", Float) = 256
+		_MainTex ("TextureLength",Float) = 256
 		_BaseTex ("BaseTexture", 2D) = "white" {}
 		_DiffuseCol ("Diffuse Color", Color) = (0.5,0.5,1,1)
 	}
@@ -36,6 +38,8 @@
 
 			sampler2D _MainTex;
 			sampler2D _BaseTex;
+			float _MainTexWidth;
+			float _MainTexLength;
 			float4 _MainTex_ST;
 			float4 _DiffuseCol;
 			
@@ -51,11 +55,23 @@
 			fixed4 frag (v2f i) : SV_Target
 			{
 				// sample the texture
-				float4 col = tex2D(_MainTex, i.uv) * 0.2;
+				float4 col = tex2D(_MainTex, i.uv);
+
+				float du = 1.0 / _MainTexWidth;
+				float dv = 1.0 / _MainTexLength;
+				float3 duv = float3(du, dv, 0);
+				float4 colx1 = tex2D(_MainTex, i.uv - duv.zy);
+				float4 colx2 = tex2D(_MainTex, i.uv + duv.zy);
+				float4 coly1 = tex2D(_MainTex, i.uv - duv.xz);
+				float4 coly2 = tex2D(_MainTex, i.uv + duv.xz);
+
+				float4 avCol = (col*0.5 + colx1*0.125 + colx2*0.125 + coly1*0.125 + coly2*0.125) *0.2;
+
 				float4 basecol = tex2D(_BaseTex, i.uv);
+				
 				// apply fog
 				UNITY_APPLY_FOG(i.fogCoord, col);
-				return col + basecol + _DiffuseCol;
+				return avCol + basecol * _DiffuseCol;
 			}
 			ENDCG
 		}
