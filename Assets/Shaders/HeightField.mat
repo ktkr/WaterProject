@@ -18,15 +18,19 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _FloorTex:
+        m_Texture: {fileID: 2800000, guid: 59611ee59de8fb14bb7e60e534349fb7, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 8600000, guid: 71c849c5c527049a8a8fcc3549189b16, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
-    - _HeightMultiplier: 0.5
+    - _HeightMultiplier: 0.2
     - _MainTexLength: 256
     - _MainTexWidth: 256
     - _refr_index: 1
     - _refr_index_nt: 1.33
     m_Colors:
-    - _SpecularColor: {r: 0, g: 0, b: 0, a: 1}
+    - _SpecularColor: {r: 0.3602941, g: 0.3602941, b: 0.3602941, a: 1}

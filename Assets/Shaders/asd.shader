@@ -10,7 +10,8 @@ Shader "Unlit/asd"
 		_HeightMultiplier("HeightMultiplier", Range(0.1,0.8)) = 0.5
 		_refr_index("Air Refraction Index", Float) = 1
 		_refr_index_nt("Water Refraction Index", Float) = 1.33
-		_SpecularColor("Specular Color", Color) = (0,0,0,1)
+		_SpecularColor("Specular Color", Color) = (0.2,0.2,0.2,0)	
+		_FloorTex ("FloorTex", 2D) = "white"{}
 	}
 	SubShader
 	{
@@ -45,7 +46,9 @@ Shader "Unlit/asd"
 			};
 
 			sampler2D _MainTex;
+			sampler2D _FloorTex;
 			float _MainTexWidth;
+			float4 _SpecularColor;
 			float _MainTexLength;
 			float4 _MainTex_ST;
 			float _HeightMultiplier;
@@ -96,10 +99,11 @@ Shader "Unlit/asd"
 				// sample the texture
 				float4 samplecol = tex2D(_MainTex, i.uv);
 				//return float4(i.normalDir, 1);
-				float4 col = float4(0,0,0.5,0);
+				float4 col = float4(0,0,0.2,0);
 				float3 lightDir = -normalize(_WorldSpaceLightPos0).xyz;//normalize(_WorldSpaceLightPos0).xyz;
 				float4 c_refl = float4 (0.5,0.5,0.7,0);
-				float4 c_refr = float4 (0.3,0.3,0.5,0);
+				float4 c_refr;// = float4 (0.3, 0.3, 0.5, 0);
+				//float4 c_refr = tex2D(_FloorTex, (i.uv + _transmitted.xz)*0.2);
 				//float3 cameraPos = float3(_ScreenParams.x,_ScreenParams.y,0);
 				float3 cameraPos = _WorldSpaceCameraPos.xyz;
 				//return normalize(cameraPos);
@@ -115,6 +119,11 @@ Shader "Unlit/asd"
 				
 				if (transmittedDirection(i.normalDir, lightDir, _refr_index, _refr_index_nt)) {
 					// Schlick stuff
+					//take surface position + travel distance
+					c_refr = tex2D(_FloorTex, (i.uv + _transmitted.xz*0.2));
+					c_refr.a = 0;
+					c_refr *= _SpecularColor;
+					
 					float R0 = pow( ( _refr_index_nt - _refr_index )/( _refr_index_nt + _refr_index) , 2);
 					float c;
 					if (_refr_index <= _refr_index_nt) {
@@ -124,7 +133,7 @@ Shader "Unlit/asd"
 						c = abs(dot(_transmitted, i.normalDir));
 					}
 					float R = R0+(1.0-R0)*pow((1.0-c),5);
-
+					col.a = 0.5 + clamp((1 - R),0,1);
 					return col + R * c_refl + (1 - R)*c_refr;
 				}
 				 //apply fog

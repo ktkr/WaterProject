@@ -66,7 +66,7 @@
 				float4 coly2 = tex2D(_MainTex, i.uv + duv.xz);
 
 				float4 avCol = (col*0.5 + colx1*0.125 + colx2*0.125 + coly1*0.125 + coly2*0.125) *0.2;
-
+				//float4 avCol = (col*0.5 + colx1 * 0.125 + colx2 * 0.125 + coly1 * 0.125 + coly2 * 0.125);
 				float4 basecol = tex2D(_BaseTex, i.uv);
 				
 				// apply fog
