@@ -9,12 +9,12 @@ public class RenderTextureController : MonoBehaviour {
     //public Material m;
     [SerializeField]
 	public CustomRenderTexture _texture;
+    
     void Start()
     {
         //if (!aTexture || !rTex)
             //Debug.LogError("A texture or a render texture are missing, assign them.");
 		_texture.Initialize();
-
     }
     void Update()
     {
@@ -27,7 +27,7 @@ public class RenderTextureController : MonoBehaviour {
         
     }
 
-    public void UpdateZones()//Vector3 loc)
+    public void UpdateZones()
     {
         //Vector3 location = new Vector3(loc.x,loc.y,loc.z);
         if (Input.GetMouseButton(0))

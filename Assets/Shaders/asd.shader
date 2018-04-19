@@ -1,13 +1,16 @@
-﻿Shader "Unlit/asd"
+﻿// Upgrade NOTE: replaced '_World2Object' with 'unity_WorldToObject'
+
+Shader "Unlit/asd"
 {
 	Properties
 	{
 		_MainTex ("Texture", 2D) = "white" {}
-		_MainTexWidth ("Width", Float) = 256
-		_MainTexLength ("Length", Float) = 256
-		_HeightMultiplier ("HeightMultiplier", Range(0.1,0.5)) = 0.5
-		_refr_index ("Air Refraction Index", Float) = 1
-		_refr_index_nt ("Water Refraction Index", Float) = 1.33
+		_MainTexWidth("Width", Float) = 256
+		_MainTexLength("Length", Float) = 256
+		_HeightMultiplier("HeightMultiplier", Range(0.1,0.8)) = 0.5
+		_refr_index("Air Refraction Index", Float) = 1
+		_refr_index_nt("Water Refraction Index", Float) = 1.33
+		_SpecularColor("Specular Color", Color) = (0,0,0,1)
 	}
 	SubShader
 	{
@@ -25,7 +28,7 @@
 			#pragma multi_compile_fog
 			
 			#include "UnityCG.cginc"
-
+			#include "Lighting.cginc"
 			struct appdata
 			{
 				float4 vertex : POSITION;
@@ -66,59 +69,71 @@
 
 				float du = 1.0 / _MainTexWidth;
 				float dv = 1.0 / _MainTexLength;
+				float3 duv = float3(du, dv, 0);
+				//float v2y = tex2Dlod(_MainTex, float4(v.texcoord.x, v.texcoord.y - dv, 0, 0)).r;
+				//float v3y = tex2Dlod(_MainTex, float4(v.texcoord.x - du, v.texcoord.y, 0, 0)).r;
+				//float3 crossProduct = cross(float3(0, v3y - temp.r, -1), float3(-1, v2y - temp.r, 0));
+				//o.normalDir = UnityObjectToWorldNormal(normalize(crossProduct));//UnityObjectToWorldNormal(crossProduct);
 
-				float v2y = tex2Dlod(_MainTex, float4(v.texcoord.x, v.texcoord.y - dv, 0, 0)).r;
-				float v3y = tex2Dlod(_MainTex, float4(v.texcoord.x - du, v.texcoord.y, 0, 0)).r;
-				float3 crossProduct = cross(float3(0, v3y - temp.r, -1), float3(-1, v2y - temp.r, 0));
-				//float3 crossProduct = cross((v3.xyz - temp.xyz), (v2.xyz - temp.xyz));
+				float v1 = tex2Dlod(_MainTex, float4(v.texcoord.xy - duv.xz, 0,0)).y;
+				float v2 = tex2Dlod(_MainTex, float4(v.texcoord.xy + duv.xz,0,0)).y;
+				float v3 = tex2Dlod(_MainTex, float4(v.texcoord.xy - duv.zy,0,0)).y;
+				float v4 = tex2Dlod(_MainTex, float4(v.texcoord.xy + duv.zy,0,0)).y;
+				o.normalDir = normalize(float3 (v1 - v2, v3 - v4, 0.3));
 
-				//v.normal = UnityObjectToWorldNormal(normalize(crossProduct));//UnityObjectToWorldNormal();
-				o.normalDir = v.normal;
-
-
-				v.vertex += float4(0, temp.y*_HeightMultiplier, 0, 0);
+				v.vertex += float4(0, temp.x*_HeightMultiplier, 0, 0);
 				o.vertex = UnityObjectToClipPos(v.vertex);
 
 				o.uv = TRANSFORM_TEX(v.texcoord, _MainTex);
 
-
-				//o.normalDir = normalize(v.normal);
-				//UNITY_TRANSFER_FOG(o, o.vertex);
+				UNITY_TRANSFER_FOG(o, o.vertex);
 				return o;
 			}
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
+				
 				// sample the texture
-				float4 col = tex2D(_MainTex, i.uv);
+				float4 samplecol = tex2D(_MainTex, i.uv);
 				//return float4(i.normalDir, 1);
-				col += float4(0,0,0,0);
-            	float3 lightDir = normalize(_WorldSpaceLightPos0).xyz;
-				float4 c_refl = float4 (1,1,1,0);
-				float4 c_refr = float4 (0,0,1,0);
-				float3 cameraPos = _WorldSpaceCameraPos;
+				float4 col = float4(0,0,0.5,0);
+				float3 lightDir = -normalize(_WorldSpaceLightPos0).xyz;//normalize(_WorldSpaceLightPos0).xyz;
+				float4 c_refl = float4 (0.5,0.5,0.7,0);
+				float4 c_refr = float4 (0.3,0.3,0.5,0);
+				//float3 cameraPos = float3(_ScreenParams.x,_ScreenParams.y,0);
+				float3 cameraPos = _WorldSpaceCameraPos.xyz;
+				//return normalize(cameraPos);
+				//if (i.vertex.x - cameraPos.x < 0)
+				//{
+				//	return float4(0,1,0,1);
+				//}
+				/*float3 diffuseReflection = *_LightColor0 * c_refr * max(0.0, dot(i.normalDir, lightDir));
+*/
+				col.a = 0.5 + clamp(0.5*samplecol,0,1).r;
+				col.r = samplecol.r*0.5;
+				col.g = samplecol.g*0.5;
+				
 				if (transmittedDirection(i.normalDir, lightDir, _refr_index, _refr_index_nt)) {
 					// Schlick stuff
 					float R0 = pow( ( _refr_index_nt - _refr_index )/( _refr_index_nt + _refr_index) , 2);
 					float c;
 					if (_refr_index <= _refr_index_nt) {
-						//c = 0.5;
-						c = abs(dot(normalize(i.vertex - cameraPos), i.normalDir));
+						c = abs(dot(normalize(i.vertex.xyz - cameraPos), i.normalDir));
 					}
 					else {
 						c = abs(dot(_transmitted, i.normalDir));
 					}
 					float R = R0+(1.0-R0)*pow((1.0-c),5);
-					col.a = R;
 
 					return col + R * c_refl + (1 - R)*c_refr;
 				}
 				 //apply fog
-				//UNITY_APPLY_FOG(i.fogCoord, col);
-				if(col.a < 0.1) discard;
-            	else col.a = 0.3;
-				return col;
+				UNITY_APPLY_FOG(i.fogCoord, col);
+				/*if(col.a < 0.1) discard;
+            	else col.a = 0.3;*/
+				
 				return c_refl + col;
+				//return c_refl + col;
 			}
 			ENDCG
 		}

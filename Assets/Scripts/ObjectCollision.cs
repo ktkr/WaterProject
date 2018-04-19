@@ -9,7 +9,8 @@ public class ObjectCollision : MonoBehaviour {
     {
         if(collision.collider.tag == "Water")
         {
-            //collision.coll
+            //collision.collider.GetComponent<RenderTextureController>().PerformActions(collision.contacts[0].point);
+            //Debug.Log("collided");
         }
     }
 }

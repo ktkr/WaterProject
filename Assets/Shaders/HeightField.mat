@@ -24,4 +24,9 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Floats:
     - _HeightMultiplier: 0.5
-    m_Colors: []
+    - _MainTexLength: 256
+    - _MainTexWidth: 256
+    - _refr_index: 1
+    - _refr_index_nt: 1.33
+    m_Colors:
+    - _SpecularColor: {r: 0, g: 0, b: 0, a: 1}
