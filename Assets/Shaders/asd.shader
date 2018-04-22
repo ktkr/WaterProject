@@ -102,7 +102,7 @@ Shader "Unlit/asd"
 				float4 col = float4(0,0,0.2,0);
 				float3 lightDir = -normalize(_WorldSpaceLightPos0).xyz;//normalize(_WorldSpaceLightPos0).xyz;
 				float4 c_refl = float4 (0.5,0.5,0.7,0);
-				float4 c_refr;// = float4 (0.3, 0.3, 0.5, 0);
+				float4 c_refr = float4 (0.3, 0.3, 0.5, 0);
 				//float4 c_refr = tex2D(_FloorTex, (i.uv + _transmitted.xz)*0.2);
 				//float3 cameraPos = float3(_ScreenParams.x,_ScreenParams.y,0);
 				float3 cameraPos = _WorldSpaceCameraPos.xyz;
@@ -120,9 +120,9 @@ Shader "Unlit/asd"
 				if (transmittedDirection(i.normalDir, lightDir, _refr_index, _refr_index_nt)) {
 					// Schlick stuff
 					//take surface position + travel distance
-					c_refr = tex2D(_FloorTex, (i.uv + _transmitted.xz*0.2));
-					c_refr.a = 0;
-					c_refr *= _SpecularColor;
+					//c_refr = tex2D(_FloorTex, (i.uv + _transmitted.xz*0.05));
+					//c_refr.a = 0;
+					//c_refr *= _SpecularColor;
 					
 					float R0 = pow( ( _refr_index_nt - _refr_index )/( _refr_index_nt + _refr_index) , 2);
 					float c;
@@ -134,14 +134,14 @@ Shader "Unlit/asd"
 					}
 					float R = R0+(1.0-R0)*pow((1.0-c),5);
 					col.a = 0.5 + clamp((1 - R),0,1);
-					return col + R * c_refl + (1 - R)*c_refr;
+					return col + (R * c_refl + (1 - R)*c_refr)*_SpecularColor;
 				}
 				 //apply fog
 				UNITY_APPLY_FOG(i.fogCoord, col);
 				/*if(col.a < 0.1) discard;
             	else col.a = 0.3;*/
 				
-				return c_refl + col;
+				return c_refl*_SpecularColor + col;
 				//return c_refl + col;
 			}
 			ENDCG
