@@ -10,10 +10,11 @@ Shader "Unlit/asd"
 		_HeightMultiplier("HeightMultiplier", Range(0.1,0.8)) = 0.5
 		_refr_index("Air Refraction Index", Float) = 1
 		_refr_index_nt("Water Refraction Index", Float) = 1.33
-		_DiffuseColor("Diffuse Color", Color) = (0.6,0.8,1.0,0);
+		_DiffuseColor("Diffuse Color", Color) = (0.6,0.8,1.0,0)
 		_SpecularColor("Specular Color", Color) = (0.2,0.2,0.2,0)	
 		_FloorTex ("FloorTex", 2D) = "white"{}
 		_CausticTex("CausticTex", 2D) = "white" {}
+		_NormalTex("NormalTex",2D) = "white"{}
 		_PoolHeight("Pool Height", Float) = 1.0
 	}
 	SubShader
@@ -36,7 +37,7 @@ Shader "Unlit/asd"
 			struct appdata
 			{
 				float4 vertex : POSITION;
-				float3 normalDir : NORMAL;
+				//float3 normalDir : NORMAL;
 				float2 uv : TEXCOORD0;
 			};
 
@@ -51,6 +52,7 @@ Shader "Unlit/asd"
 			sampler2D _MainTex;
 			sampler2D _FloorTex;
 			sampler2D _CausticTex;
+			sampler2D _NormalTex;
 			float _MainTexWidth;
 			float4 _SpecularColor;
 			float4 _DiffuseColor;
@@ -131,10 +133,10 @@ Shader "Unlit/asd"
 
 			}
 
-			v2f vert (appdata_base v)
+			v2f vert (appdata v)
 			{
 				v2f o;
-				float4 temp = tex2Dlod(_MainTex, float4(v.texcoord.xy,0,0));
+				float4 temp = tex2Dlod(_MainTex, float4(v.uv.xy,0,0));
 
 				float du = 1.0 / _MainTexWidth;
 				float dv = 1.0 / _MainTexLength;
@@ -144,16 +146,17 @@ Shader "Unlit/asd"
 				//float3 crossProduct = cross(float3(0, v3y - temp.r, -1), float3(-1, v2y - temp.r, 0));
 				//o.normalDir = UnityObjectToWorldNormal(normalize(crossProduct));//UnityObjectToWorldNormal(crossProduct);
 
-				float v1 = tex2Dlod(_MainTex, float4(v.texcoord.xy - duv.xz, 0,0)).y;
-				float v2 = tex2Dlod(_MainTex, float4(v.texcoord.xy + duv.xz,0,0)).y;
-				float v3 = tex2Dlod(_MainTex, float4(v.texcoord.xy - duv.zy,0,0)).y;
-				float v4 = tex2Dlod(_MainTex, float4(v.texcoord.xy + duv.zy,0,0)).y;
-				o.normalDir = normalize(float3 (v1 - v2, v3 - v4, 0.3));
-
+				//float v1 = tex2Dlod(_MainTex, float4(v.texcoord.xy - duv.xz, 0,0)).y;
+				//float v2 = tex2Dlod(_MainTex, float4(v.texcoord.xy + duv.xz,0,0)).y;
+				//float v3 = tex2Dlod(_MainTex, float4(v.texcoord.xy - duv.zy,0,0)).y;
+				//float v4 = tex2Dlod(_MainTex, float4(v.texcoord.xy + duv.zy,0,0)).y;
+				//o.normalDir = UnityObjectToWorldNormal(normalize(float3 (v1 - v2, v3 - v4, 0.5)));
+				
+				o.normalDir = tex2Dlod(_NormalTex, float4(v.uv.xy, 0, 0));
 				v.vertex += float4(0, temp.x*_HeightMultiplier, 0, 0);
 				o.vertex = UnityObjectToClipPos(v.vertex);
 
-				o.uv = TRANSFORM_TEX(v.texcoord, _MainTex);
+				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
 
 				UNITY_TRANSFER_FOG(o, o.vertex);
 				return o;
@@ -161,9 +164,51 @@ Shader "Unlit/asd"
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
-				
+			//	float2 coordinate = i.vertex.xz;
+			//	float4 samplecol = tex2D(_MainTex,i.uv);
+
+			//	float3 norm = float3(samplecol.b, sqrt(1.0 - dot()))
+
+			//	void main() {
+			//	\
+			//		vec2 coord = position.xz * 0.5 + 0.5; \
+			//		vec4 info = texture2D(water, coord); \
+			//		\
+			//		/* make water look more "peaked" */\
+			//		for (int i = 0; i < 5; i++) {
+			//			\
+			//				coord += info.ba * 0.005; \
+			//				info = texture2D(water, coord); \
+			//		}\
+			//			\
+			//				vec3 normal = vec3(info.b, sqrt(1.0 - dot(info.ba, info.ba)), info.a); \
+			//				vec3 incomingRay = normalize(position - eye); \
+			//				\
+			//				' + (i ? /* underwater */ '\
+			//				normal = -normal; \
+			//				vec3 reflectedRay = reflect(incomingRay, normal); \
+			//				vec3 refractedRay = refract(incomingRay, normal, IOR_WATER / IOR_AIR); \
+			//				float fresnel = mix(0.5, 1.0, pow(1.0 - dot(normal, -incomingRay), 3.0)); \
+			//				\
+			//				vec3 reflectedColor = getSurfaceRayColor(position, reflectedRay, underwaterColor); \
+			//				vec3 refractedColor = getSurfaceRayColor(position, refractedRay, vec3(1.0)) * vec3(0.8, 1.0, 1.1); \
+			//				\
+			//				gl_FragColor = vec4(mix(reflectedColor, refractedColor, (1.0 - fresnel) * length(refractedRay)), 1.0); \
+			//				' : /* above water */ '\
+			//				vec3 reflectedRay = reflect(incomingRay, normal); \
+			//				vec3 refractedRay = refract(incomingRay, normal, IOR_AIR / IOR_WATER); \
+			//				float fresnel = mix(0.25, 1.0, pow(1.0 - dot(normal, -incomingRay), 3.0)); \
+			//				\
+			//				vec3 reflectedColor = getSurfaceRayColor(position, reflectedRay, abovewaterColor); \
+			//				vec3 refractedColor = getSurfaceRayColor(position, refractedRay, abovewaterColor); \
+			//				\
+			//				gl_FragColor = vec4(mix(refractedColor, reflectedColor, fresnel), 1.0); \
+			//				') + '\
+			//}\
+
+				//return float4(i.normalDir,1.0)	;
 				// sample the texture
-				float4 samplecol = tex2D(_MainTex, i.uv);
+				float4 samplecol = tex2D(_MainTex, i.uv)* _DiffuseColor;
 				//return float4(i.normalDir, 1);
 				float4 col = float4(0,0,0.2,0);
 				float3 lightDir = normalize(_WorldSpaceLightPos0).xyz;//normalize(_WorldSpaceLightPos0).xyz;
