@@ -10,8 +10,11 @@ Shader "Unlit/asd"
 		_HeightMultiplier("HeightMultiplier", Range(0.1,0.8)) = 0.5
 		_refr_index("Air Refraction Index", Float) = 1
 		_refr_index_nt("Water Refraction Index", Float) = 1.33
+		_DiffuseColor("Diffuse Color", Color) = (0.6,0.8,1.0,0);
 		_SpecularColor("Specular Color", Color) = (0.2,0.2,0.2,0)	
 		_FloorTex ("FloorTex", 2D) = "white"{}
+		_CausticTex("CausticTex", 2D) = "white" {}
+		_PoolHeight("Pool Height", Float) = 1.0
 	}
 	SubShader
 	{
@@ -47,14 +50,17 @@ Shader "Unlit/asd"
 
 			sampler2D _MainTex;
 			sampler2D _FloorTex;
+			sampler2D _CausticTex;
 			float _MainTexWidth;
 			float4 _SpecularColor;
+			float4 _DiffuseColor;
 			float _MainTexLength;
 			float4 _MainTex_ST;
 			float _HeightMultiplier;
 			float3 _transmitted;
 			float _refr_index_nt;
 			float _refr_index;
+			float poolHeight;
 
 			bool transmittedDirection( float3 n, float3 incoming, float index_n, float index_nt)
 			{
@@ -65,13 +71,24 @@ Shader "Unlit/asd"
 				return true;
 			}
 
+
+			float2 intersectCube(float3 origin, float3 ray, float3 cubeMin, float3 cubeMax) {
+				float3 tMin = (cubeMin - origin) / ray;
+				float3 tMax = (cubeMax - origin) / ray;
+				float3 t1 = min(tMin, tMax);
+				float3 t2 = max(tMin, tMax);
+				float tNear = max(max(t1.x, t1.y), t1.z);
+				float tFar = min(min(t2.x, t2.y), t2.z);
+				return float2(tNear, tFar);
+			}
+
 			float3 getWallColour(float3 wallPoint) {
-				float causticScale = 0.5;
+				float scale = 0.5;
 				float3 col;
 				float3 norm;
 				float refr_air = 1.0;
 				float refr_water = 1.33;
-
+				
 				//only interior, must invert normals
 
 				//if x boundary hit
