@@ -23,10 +23,10 @@
 		float du = 1.0 / _WaterTexWidth;
 		float dv = 1.0 / _WaterTexHeight;
 
-		float v1y = tex2D(_WaterTex, uv).r;
-		float v2y = tex2D(_WaterTex, uv + float2(du,0)).r;
-		float v3y = tex2D(_WaterTex, uv + float2(0,dv)).r;
-		float3 crossProduct = cross(float3(du, v2y - v1y, 0), float3(0, v3y - v1y, dv));
+		float v1y = tex2D(_WaterTex, uv).g;
+		float v2y = tex2D(_WaterTex, uv + float2(du,0)).g;
+		float v3y = tex2D(_WaterTex, uv + float2(0,dv)).g;
+		float3 crossProduct = cross(float3(0, v2y - v1y, du), float3(dv, v3y - v1y, 0));
 		//float3 crossProduct = cross(float3(0, v3y - v1y, dv), float3(du, v2y - v1y, 0));
 		return float4(normalize(crossProduct), 1);
 		

@@ -468,6 +468,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _texture: {fileID: 8600000, guid: 71c849c5c527049a8a8fcc3549189b16, type: 2}
+  _normalTexture: {fileID: 8600000, guid: 3de6cc1a34a137e4388c1c4b2bf6a199, type: 2}
 --- !u!1 &899432922
 GameObject:
   m_ObjectHideFlags: 0
@@ -1304,7 +1305,7 @@ GameObject:
   - component: {fileID: 2127783183}
   - component: {fileID: 2127783182}
   - component: {fileID: 2127783181}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -9,12 +9,16 @@ public class RenderTextureController : MonoBehaviour {
     //public Material m;
     [SerializeField]
 	public CustomRenderTexture _texture;
+
+    [SerializeField]
+    public CustomRenderTexture _normalTexture;
     
     void Start()
     {
         //if (!aTexture || !rTex)
             //Debug.LogError("A texture or a render texture are missing, assign them.");
 		_texture.Initialize();
+        _normalTexture.Initialize();
     }
     void Update()
     {
@@ -23,8 +27,10 @@ public class RenderTextureController : MonoBehaviour {
         _texture.ClearUpdateZones();
         UpdateZones();
         //UpdateZones(Input.mousePosition);
-        _texture.Update(2);
-        
+        _texture.Update(1);
+        _normalTexture.Update(1);
+        _texture.Update(1);
+        _normalTexture.Update(1);
     }
 
     public void UpdateZones()

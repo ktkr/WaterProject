@@ -38,10 +38,12 @@ float4 frag(v2f_customrendertexture i) : SV_Target
         tex2D(_SelfTexture2D, uv - duv.xz).r +
         tex2D(_SelfTexture2D, uv + duv.xz).r - 4 * c.r)) * _Atten;
 
-	//float spd = (tex2D(_SelfTexture2D, uv - duv.zy).r +
+
+
+	//float spd = ((tex2D(_SelfTexture2D, uv - duv.zy).r +
 	//	tex2D(_SelfTexture2D, uv + duv.zy).r +
 	//	tex2D(_SelfTexture2D, uv - duv.xz).r +
-	//	tex2D(_SelfTexture2D, uv + duv.xz).r) *0.25;
+	//	tex2D(_SelfTexture2D, uv + duv.xz).r) *0.25 - c.r) * _Atten  ;
 	//	//tex2D(_SelfTexture2D,uv -)
 	//c.g += (spd - c.r)*2.0;
 	//c.g *= _Atten;

@@ -19,7 +19,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _CausticTex:
-        m_Texture: {fileID: 8400000, guid: 3b8856200eaa34849b7c53e44730ee29, type: 2}
+        m_Texture: {fileID: 8600000, guid: 1c477ef2734854baf8c98817bb8bcd19, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _FloorTex:
@@ -30,11 +30,17 @@ Material:
         m_Texture: {fileID: 8600000, guid: 71c849c5c527049a8a8fcc3549189b16, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _NormalTex:
+        m_Texture: {fileID: 8600000, guid: 3de6cc1a34a137e4388c1c4b2bf6a199, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Floats:
     - _HeightMultiplier: 0.2
     - _MainTexLength: 256
     - _MainTexWidth: 256
+    - _PoolHeight: 1
     - _refr_index: 1
     - _refr_index_nt: 1.33
     m_Colors:
+    - _DiffuseColor: {r: 0.6, g: 0.8, b: 1, a: 0}
     - _SpecularColor: {r: 0.3602941, g: 0.3602941, b: 0.3602941, a: 1}
