@@ -65,6 +65,55 @@ Shader "Unlit/asd"
 				return true;
 			}
 
+			float3 getWallColour(float3 wallPoint) {
+				float causticScale = 0.5;
+				float3 col;
+				float3 norm;
+				float refr_air = 1.0;
+				float refr_water = 1.33;
+
+				//only interior, must invert normals
+
+				//if x boundary hit
+				if (abs(wallPoint.x) > 0.999) {
+					col = tex2D(_FloorTex, wallPoint.yz *0.5 + float2(1.0, 0.5)).rgb;
+					norm = float3(-wallPoint.x, 0, 0);
+				}
+				//if z boundary hit
+				else if (abs(wallPoint.z) > 0.999) {
+					col = tex2D(_FloorTex, wallPoint.yx*0.5 + float2(1.0, 0.5)).rgb;
+					norm = float3(0, 0, -wallPoint.z);
+				}
+				else {
+					col = tex2D(_FloorTex, wallPoint.xz*0.5 + float2(0.5,0.5)).rgb;
+					norm = float3(0, 1, 0);
+				}
+				
+				//calc refracted light and diffuse light
+				float3 refr = -refract(-_WorldSpaceLightPos0, float3(0, 1, 0), refr_air / refr_water);
+				float diffuse = max(0, dot(refr, norm));
+
+				float4 water = tex2D(_MainTex, wallPoint.xz * 0.5 + float2(0.5,0.5));
+
+				//only render caustic when the wall portion is below the water
+				if (wallPoint.y < water.r) {
+					
+					float4 caustic = tex2D(_CausticTex, 0.75*(wallPoint.xz - wallPoint.y * refr.xz / refr.y)* 0.5 + float2(0.5,0.5));
+					scale += diffuse * caustic.r * 2.0 * caustic.g;
+				}
+				else {
+					float2 t = intersectCube(wallPoint, refr, float3(-1, -poolHeight, -1.0), float3(1, 2, 1));
+					//wtf is this color calc
+					diffuse *= 1.0 / (1.0 + exp(-200.0 / (1.0 + 10.0 * (t.y - t.x)) * (wallPoint.y + refr.y *t.y - 2.0 / 12.0)));
+
+					scale += diffuse * 0.5;
+				
+				}
+
+				return col * scale;
+
+			}
+
 			v2f vert (appdata_base v)
 			{
 				v2f o;
@@ -100,7 +149,7 @@ Shader "Unlit/asd"
 				float4 samplecol = tex2D(_MainTex, i.uv);
 				//return float4(i.normalDir, 1);
 				float4 col = float4(0,0,0.2,0);
-				float3 lightDir = -normalize(_WorldSpaceLightPos0).xyz;//normalize(_WorldSpaceLightPos0).xyz;
+				float3 lightDir = normalize(_WorldSpaceLightPos0).xyz;//normalize(_WorldSpaceLightPos0).xyz;
 				float4 c_refl = float4 (0.5,0.5,0.7,0);
 				float4 c_refr = float4 (0.3, 0.3, 0.5, 0);
 				//float4 c_refr = tex2D(_FloorTex, (i.uv + _transmitted.xz)*0.2);
