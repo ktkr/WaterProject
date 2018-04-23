@@ -10,8 +10,8 @@ Shader "Unlit/asd"
 		_HeightMultiplier("HeightMultiplier", Range(0.1,0.8)) = 0.5
 		_refr_index("Air Refraction Index", Float) = 1
 		_refr_index_nt("Water Refraction Index", Float) = 1.33
-		_DiffuseColor("Diffuse Color", Color) = (0.6,0.8,1.0,0)
-		_SpecularColor("Specular Color", Color) = (0.2,0.2,0.2,0)	
+		_DiffuseColor("Diffuse Color", Color) = (0.2,0.2,1.0,0)
+		_SpecularColor("Specular Color", Color) = (0.5,0.5,0.5,0)	
 		_FloorTex ("FloorTex", 2D) = "white"{}
 		_CausticTex("CausticTex", 2D) = "white" {}
 		_NormalTex("NormalTex",2D) = "white"{}
@@ -65,6 +65,7 @@ Shader "Unlit/asd"
 			float3 _transmitted;
 			float _refr_index_nt;
 			float _refr_index;
+
 			float _PoolHeight;
 			float3 _eye;
 			float4 _aboveWaterColor;
@@ -143,12 +144,14 @@ Shader "Unlit/asd"
         		if (ray.y < 2.5) {
           			float2 t = intersectCube(origin, ray, float3(-1.0, -_PoolHeight, -1.0), float3(1.0, 2.0, 1.0));
           			color = getWallColor(origin + ray * t.y);
-        		} else {
+        		} 
+				else {
           			float2 t = intersectCube(origin, ray, float3(-1.0, -_PoolHeight, -1.0), float3(1.0, 2.0, 1.0));
           			float3 hit = origin + ray * t.y;
           			if (hit.y < 2.0 / 12.0) {
             			color = getWallColor(hit);
-          			} else {
+          			} 
+					else {
           				color = float3(1,0,0); // random red
           				return waterColor;
 //            			color = texCube(sky, ray).rgb;
@@ -179,11 +182,12 @@ Shader "Unlit/asd"
 				//float v4 = tex2Dlod(_MainTex, float4(v.texcoord.xy + duv.zy,0,0)).y;
 				//o.normalDir = UnityObjectToWorldNormal(normalize(float3 (v1 - v2, v3 - v4, 0.5)));
 				
-				o.normalDir = tex2Dlod(_NormalTex, float4(v.uv.xy, 0, 0));
-				o.vertexGlobal = v.vertex;
-				v.vertex += float4(0, temp.x*_HeightMultiplier, 0, 0);
-				o.vertex = UnityObjectToClipPos(v.vertex);
 
+				o.normalDir = UnityObjectToWorldNormal(tex2Dlod(_NormalTex, float4(v.uv.xy, 0, 0)));
+				v.vertex += float4(0, temp.x*_HeightMultiplier, 0, 0);
+				o.vertexGlobal = v.vertex;
+				o.vertex = UnityObjectToClipPos(v.vertex);
+				
 				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
 
 				UNITY_TRANSFER_FOG(o, o.vertex);
@@ -290,25 +294,81 @@ Shader "Unlit/asd"
 			fixed4 frag (v2f i) : SV_Target
 			{
 				float3 position = i.vertexGlobal;
-				float2 coord = position.xz * 0.5 + 0.5;
+				float2 coord = position.xz*0.5 + 0.5;//position.xz * 0.5 + 0.5;
 				float4 info = tex2D(_NormalTex, coord);
 				float3 n = float3(info.b, sqrt(1.0 - dot(info.ba, info.ba)), info.a);
 				float3 incomingRay = normalize(position - _WorldSpaceCameraPos.xyz);
 
 				float3 reflectedRay = reflect(incomingRay, n);
 				float3 refractedRay = refract(incomingRay, n, 1.0 / 1.33);
-
+				
 				float d = pow(1.0 - dot(n, -incomingRay), 3.0);
 				float fresnel = (1-d)*0.25 + 1.0 * d;
+
 
 				float3 reflectedColor = getSurfaceRayColor(position, reflectedRay, _aboveWaterColor.rgb);
           		float3 refractedColor = getSurfaceRayColor(position, refractedRay, _aboveWaterColor.rgb);
 
-          		return float4(refractedColor,1);
+          		//return float4(refractedColor,1);
 
-          		float3 rgb = (1-fresnel)*refractedColor + reflectedColor * 0;
+          		float3 rgb = _DiffuseColor + (1-fresnel)*refractedColor + reflectedColor*fresnel;
 
           		return float4(rgb, 0.3);
+
+				//return float4(i.normalDir,1.0)	;
+				// sample the texture
+				float4 samplecol = tex2D(_MainTex, i.uv)* _DiffuseColor;
+				//return float4(i.normalDir, 1);
+				float4 col = float4(0,0,0.2,0);
+				float3 lightDir = normalize(_WorldSpaceLightPos0).xyz;//normalize(_WorldSpaceLightPos0).xyz;
+				float4 c_refl = float4 (0.7,0.7,0.7,0);
+				float4 c_refr = float4 (0.5, 0.5, 0.7, 0);
+				//float4 c_refr = tex2D(_FloorTex, (i.uv + _transmitted.xz)*0.2);
+				//float3 cameraPos = float3(_ScreenParams.x,_ScreenParams.y,0);
+				float3 cameraPos = _WorldSpaceCameraPos.xyz;//_WorldSpaceCameraPos.xyz;
+				//return float4(0,i.globalVertex.z,0,1);
+				//return normalize(cameraPos);
+				//if (i.vertex.x - cameraPos.x < 0)
+				//{
+				//	return float4(0,1,0,1);
+				//}
+				/*float3 diffuseReflection = *_LightColor0 * c_refr * max(0.0, dot(i.normalDir, lightDir));
+*/
+				col.a = 0.5 + clamp(0.5*samplecol,0,1).r;
+				/*col.r = samplecol.r*0.5;
+				col.g = samplecol.g*0.5;
+				*/
+				col.r = samplecol.r;
+				col.g = samplecol.g;
+
+				if (transmittedDirection(i.normalDir, lightDir, _refr_index, _refr_index_nt)) {
+					// Schlick stuff
+					//take surface position + travel distance
+					//c_refr = tex2D(_FloorTex, (i.uv + _transmitted.xz*0.05));
+					//c_refr.a = 0;
+					//c_refr *= _SpecularColor;
+					
+					float R0 = pow( ( _refr_index_nt - _refr_index )/( _refr_index_nt + _refr_index) , 2);
+					float c;
+					if (_refr_index <= _refr_index_nt) {
+						c = abs(dot(normalize(i.vertexGlobal.xyz - cameraPos), i.normalDir));
+					}
+					else {
+						c = abs(dot(_transmitted, i.normalDir));
+					}
+					float R = R0+(1.0-R0)*pow((1.0-c),5);
+					//col.a = 0.5 + clamp((1 - R),0,1);
+					col.a = 0.2 + R;
+					return col + (R * c_refl + (1 - R)*c_refr)*_SpecularColor;
+				}
+				 //apply fog
+				UNITY_APPLY_FOG(i.fogCoord, col);
+				/*if(col.a < 0.1) discard;
+            	else col.a = 0.3;*/
+				
+				return c_refl*_SpecularColor + col;
+				//return c_refl + col;
+
 			}
 			ENDCG
 		}

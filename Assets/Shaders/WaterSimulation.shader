@@ -38,7 +38,7 @@ float4 frag(v2f_customrendertexture i) : SV_Target
         tex2D(_SelfTexture2D, uv - duv.xz).r +
         tex2D(_SelfTexture2D, uv + duv.xz).r - 4 * c.r)) * _Atten;
 
-	if (p < 0.01) {
+	if (p < 0.005) {
 		return float4(0, 0, 0, 1);
 	}
 

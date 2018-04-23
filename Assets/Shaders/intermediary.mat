@@ -19,7 +19,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs: []
     m_Floats:
-    - _Atten: 0.97
+    - _Atten: 0.995
     - _DeltaUV: 3
     - _S2: 0.2
     m_Colors: []
