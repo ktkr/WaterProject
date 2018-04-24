@@ -1,6 +1,6 @@
 ﻿// Upgrade NOTE: replaced '_World2Object' with 'unity_WorldToObject'
 
-Shader "Unlit/asd"
+Shader "Water/asd"
 {
 	Properties
 	{
@@ -21,7 +21,7 @@ Shader "Unlit/asd"
 	}
 	SubShader
 	{
-		Tags { "Queue"="Geometry"} //"RenderType"="Transparent" }
+		Tags { "Queue"="Transparent"} //"RenderType"="Transparent" }
 		Blend SrcAlpha OneMinusSrcAlpha
         AlphaTest Greater 0.1
 		LOD 100
@@ -159,7 +159,10 @@ Shader "Unlit/asd"
           			}
         		}
 
-        		if (ray.y < 0.0) color *= waterColor;
+				if (ray.y < 0.0) 
+				{ 
+					color *= waterColor; 
+				}
         		return color;
       		}
 
@@ -187,57 +190,12 @@ Shader "Unlit/asd"
 				v.vertex += float4(0, temp.x*_HeightMultiplier, 0, 0);
 				o.vertexGlobal = v.vertex;
 				o.vertex = UnityObjectToClipPos(v.vertex);
-				
 				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
 
 				UNITY_TRANSFER_FOG(o, o.vertex);
 				return o;
 			}
-			
-//			fixed4 frag (v2f i) : SV_Target
-//			{
-//			//	float2 coordinate = i.vertex.xz;
-//			//	float4 samplecol = tex2D(_MainTex,i.uv);
-//
-//			//	float3 norm = float3(samplecol.b, sqrt(1.0 - dot()))
-//
-//			//	void main() {
-//			//	
-//			//		vec2 coord = position.xz * 0.5 + 0.5; 
-//			//		vec4 info = texture2D(water, coord); 
-//			//		
-//			//		/* make water look more "peaked" */
-//			//		for (int i = 0; i < 5; i++) {
-//			//			
-//			//				coord += info.ba * 0.005; 
-//			//				info = texture2D(water, coord); 
-//			//		}
-//			//			
-//			//				vec3 normal = vec3(info.b, sqrt(1.0 - dot(info.ba, info.ba)), info.a); 
-//			//				vec3 incomingRay = normalize(position - eye); 
-//			//				
-//			//				' + (i ? /* underwater */ '
-//			//				normal = -normal; 
-//			//				vec3 reflectedRay = reflect(incomingRay, normal); 
-//			//				vec3 refractedRay = refract(incomingRay, normal, IOR_WATER / IOR_AIR); 
-//			//				float fresnel = mix(0.5, 1.0, pow(1.0 - dot(normal, -incomingRay), 3.0)); 
-//			//				
-//			//				vec3 reflectedColor = getSurfaceRayColor(position, reflectedRay, underwaterColor); 
-//			//				vec3 refractedColor = getSurfaceRayColor(position, refractedRay, vec3(1.0)) * vec3(0.8, 1.0, 1.1); 
-//			//				
-//			//				gl_FragColor = vec4(mix(reflectedColor, refractedColor, (1.0 - fresnel) * length(refractedRay)), 1.0); 
-//			//				' : /* above water */ '
-//			//				vec3 reflectedRay = reflect(incomingRay, normal); 
-//			//				vec3 refractedRay = refract(incomingRay, normal, IOR_AIR / IOR_WATER); 
-//			//				float fresnel = mix(0.25, 1.0, pow(1.0 - dot(normal, -incomingRay), 3.0)); 
-//			//				
-//			//				vec3 reflectedColor = getSurfaceRayColor(position, reflectedRay, abovewaterColor); 
-//			//				vec3 refractedColor = getSurfaceRayColor(position, refractedRay, abovewaterColor); 
-//			//				
-//			//				gl_FragColor = vec4(mix(refractedColor, reflectedColor, fresnel), 1.0); 
-//			//				') + '
-//			//}
-//
+
 //				//return float4(i.normalDir,1.0)	;
 //				// sample the texture
 //				float4 samplecol = tex2D(_MainTex, i.uv)* _DiffuseColor;
@@ -296,22 +254,26 @@ Shader "Unlit/asd"
 				float3 position = i.vertexGlobal;
 				float2 coord = position.xz*0.5 + 0.5;//position.xz * 0.5 + 0.5;
 				float4 info = tex2D(_NormalTex, coord);
-				float3 n = float3(info.b, sqrt(1.0 - dot(info.ba, info.ba)), info.a);
+				float3 n = info.rgb;
+				//float3 n = float3(info.b, sqrt(1.0 - dot(info.ba, info.ba)), info.a);
 				float3 incomingRay = normalize(position - _WorldSpaceCameraPos.xyz);
 
 				float3 reflectedRay = reflect(incomingRay, n);
 				float3 refractedRay = refract(incomingRay, n, 1.0 / 1.33);
 				
-				float d = pow(1.0 - dot(n, -incomingRay), 3.0);
-				float fresnel = (1-d)*0.25 + 1.0 * d;
-
+				float R0 =  pow((1.33 - 1) / (2.33), 2);
+				float c = abs(dot(incomingRay, n));
+				float fresnel = R0 + (1.0 - R0)*pow((1.0 - c), 5);
+				//float d = pow(1.0 - dot(n, -incomingRay), 3.0);
+				//float fresnel = (1-d)*0.25 + 1.0 * d;
+				//c = abs(dot(normalize(i.vertexGlobal.xyz - cameraPos), i.normalDir));
 
 				float3 reflectedColor = getSurfaceRayColor(position, reflectedRay, _aboveWaterColor.rgb);
           		float3 refractedColor = getSurfaceRayColor(position, refractedRay, _aboveWaterColor.rgb);
 
           		//return float4(refractedColor,1);
 
-          		float3 rgb = _DiffuseColor + (1-fresnel)*refractedColor + reflectedColor*fresnel;
+          		float3 rgb = _DiffuseColor + ((1-fresnel)*refractedColor + reflectedColor*fresnel)*_SpecularColor;
 
           		return float4(rgb, 0.3);
 

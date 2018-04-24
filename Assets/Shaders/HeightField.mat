@@ -35,12 +35,17 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
-    - _HeightMultiplier: 0.2
+    - _CameraPositionX: 0
+    - _CameraPositionY: 0
+    - _CameraPositionZ: 0
+    - _HeightMultiplier: 0.3
     - _MainTexLength: 256
     - _MainTexWidth: 256
-    - _PoolHeight: 1
+    - _PoolHeight: 5
     - _refr_index: 1
     - _refr_index_nt: 1.33
     m_Colors:
-    - _DiffuseColor: {r: 0.6, g: 0.8, b: 1, a: 0}
-    - _SpecularColor: {r: 0.3602941, g: 0.3602941, b: 0.3602941, a: 1}
+    - _DiffuseColor: {r: 0.197, g: 0.197, b: 1, a: 0}
+    - _SpecularColor: {r: 0.6838235, g: 0.6838235, b: 0.6838235, a: 1}
+    - _aboveWaterColor: {r: 0.6, g: 0.8, b: 1, a: 0}
+    - _eye: {r: 1, g: 1, b: 1, a: 1}
