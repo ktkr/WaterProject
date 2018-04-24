@@ -15,7 +15,7 @@ Shader "Water/asd"
 		_FloorTex ("FloorTex", 2D) = "white"{}
 		_CausticTex("CausticTex", 2D) = "white" {}
 		_NormalTex("NormalTex",2D) = "white"{}
-		_PoolHeight("Pool Height", Float) = 1.0
+		_PoolHeight("Pool Height", Float) = 5.0
 		_eye("Eye Position", Vector) = (1,1,1)
 		_aboveWaterColor("above water color", Color) = (0.6,0.8,1.0,0)
 	}
@@ -99,6 +99,15 @@ Shader "Water/asd"
 				
 				//only interior, must invert normals
 
+				// DEBUG
+//				if (abs(wallPoint.x) > 2) {
+//					return float3(1,0,0);
+//				}
+//
+//				if (abs(wallPoint.z) > 2) {
+//					return float3(1,1,0);
+//				}
+
 				//if x boundary hit
 				if (abs(wallPoint.x) > 0.999) {
 					col = tex2D(_FloorTex, wallPoint.yz *0.5 + float2(1.0, 0.5)).rgb;
@@ -141,12 +150,17 @@ Shader "Water/asd"
 
 			float3 getSurfaceRayColor(float3 origin, float3 ray, float3 waterColor) {
         		float3 color;
-        		if (ray.y < 2.5) {
-          			float2 t = intersectCube(origin, ray, float3(-1.0, -_PoolHeight, -1.0), float3(1.0, 2.0, 1.0));
+
+//        		if (ray.y < -0.8) {
+//        			return (1,0,1);
+//        		}
+//
+        		if (ray.y < -0.8) {
+          			float2 t = intersectCube(origin, ray, float3(-3.0, -_PoolHeight, -3.0), float3(2.0, 2.0, 2.0));
           			color = getWallColor(origin + ray * t.y);
         		} 
 				else {
-          			float2 t = intersectCube(origin, ray, float3(-1.0, -_PoolHeight, -1.0), float3(1.0, 2.0, 1.0));
+          			float2 t = intersectCube(origin, ray, float3(-2.0, -_PoolHeight, -2.0), float3(2.0, 2.0, 2.0));
           			float3 hit = origin + ray * t.y;
           			if (hit.y < 2.0 / 12.0) {
             			color = getWallColor(hit);
@@ -252,11 +266,11 @@ Shader "Water/asd"
 			fixed4 frag (v2f i) : SV_Target
 			{
 				float3 position = i.vertexGlobal;
-				float2 coord = position.xz*0.5 + 0.5;//position.xz * 0.5 + 0.5;
+				float2 coord = i.uv.xy;//position.xz * 0.5 + 0.5;
 				float4 info = tex2D(_NormalTex, coord);
 				float3 n = info.rgb;
 				//float3 n = float3(info.b, sqrt(1.0 - dot(info.ba, info.ba)), info.a);
-				float3 incomingRay = normalize(position - _WorldSpaceCameraPos.xyz);
+				float3 incomingRay = mul(unity_CameraInvProjection , float4(normalize(position - _WorldSpaceCameraPos.xyz),1)).xyz;
 
 				float3 reflectedRay = reflect(incomingRay, n);
 				float3 refractedRay = refract(incomingRay, n, 1.0 / 1.33);
