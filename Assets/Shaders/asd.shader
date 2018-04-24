@@ -109,22 +109,28 @@ Shader "Water/asd"
 //				}
 
 				//if x boundary hit
-				if (abs(wallPoint.x) > 0.999) {
-					col = tex2D(_FloorTex, wallPoint.yz *0.5 + float2(1.0, 0.5)).rgb;
+				if (abs(wallPoint.x) > 4.999) {
+					col = tex2D(_FloorTex, wallPoint.yz*0.1);// *0.5 + float2(1.0, 0.5)).rgb;
 					norm = float3(-wallPoint.x, 0, 0);
 				}
 				//if z boundary hit
-				else if (abs(wallPoint.z) > 0.999) {
-					col = tex2D(_FloorTex, wallPoint.yx*0.5 + float2(1.0, 0.5)).rgb;
+				else if (abs(wallPoint.z) > 4.999) {
+					col = tex2D(_FloorTex, wallPoint.yx*0.1);// *0.5 + float2(1.0, 0.5)).rgb;
 					norm = float3(0, 0, -wallPoint.z);
 				}
 				else {
-					col = tex2D(_FloorTex, wallPoint.xz*0.5 + float2(0.5,0.5)).rgb;
-					norm = float3(0, 1, 0);
+					col = tex2D(_FloorTex, wallPoint.xz*0.1);// *0.5 + float2(0.5, 0.5)).rgb;
+					if (abs(wallPoint.y) > 4.999) {
+						norm = float3(0, -1, 0);
+					}
+					else {
+						norm = float3(0, 1, 0);
+					}
 				}
 				
+				float4 normal123 = tex2D(_NormalTex, wallPoint.xz);
 				//calc refracted light and diffuse light
-				float3 refr = -refract(-_WorldSpaceLightPos0, float3(0, 1, 0), refr_air / refr_water);
+				float3 refr = -refract(-_WorldSpaceLightPos0, normal123.xyz, refr_air / refr_water);
 				float diffuse = max(0, dot(refr, norm));
 
 				float4 water = tex2D(_NormalTex, wallPoint.xz * 0.5 + float2(0.5,0.5));
@@ -136,9 +142,9 @@ Shader "Water/asd"
 					scale += diffuse * caustic.r * 2.0 * caustic.g;
 				}
 				else {
-					float2 t = intersectCube(wallPoint, refr, float3(-1, -_PoolHeight, -1.0), float3(1, 2, 1));
+					float2 t = intersectCube(wallPoint, refr, float3(-5, -_PoolHeight, -5.0), float3(5, 5, 5));
 					//wtf is this color calc
-					diffuse *= 1.0 / (1.0 + exp(-200.0 / (1.0 + 10.0 * (t.y - t.x)) * (wallPoint.y + refr.y *t.y - 2.0 / 12.0)));
+					diffuse *= 1.0 / (1.0 + exp(-200.0 / (1.0 + 10.0 * (t.y - t.x)) * (wallPoint.y + refr.y *t.y - 7.0 / 12.0)));
 
 					scale += diffuse * 0.5;
 				
@@ -155,18 +161,18 @@ Shader "Water/asd"
 //        			return (1,0,1);
 //        		}
 //
-        		if (ray.y < -0.8) {
-          			float2 t = intersectCube(origin, ray, float3(-3.0, -_PoolHeight, -3.0), float3(2.0, 2.0, 2.0));
+        		if (ray.y < -0.2) {
+          			float2 t = intersectCube(origin, ray, float3(-5.0, -_PoolHeight, -5.0), float3(5.0, 5.0, 5.0));
           			color = getWallColor(origin + ray * t.y);
         		} 
 				else {
-          			float2 t = intersectCube(origin, ray, float3(-2.0, -_PoolHeight, -2.0), float3(2.0, 2.0, 2.0));
+          			float2 t = intersectCube(origin, ray, float3(-5.0, -_PoolHeight, -5.0), float3(5.0, 5.0, 5.0));
           			float3 hit = origin + ray * t.y;
-          			if (hit.y < 2.0 / 12.0) {
+          			if (hit.y < 7.0 / 12.0) {
             			color = getWallColor(hit);
           			} 
 					else {
-          				color = float3(1,0,0); // random red
+          				//color = float3(1,0,0); // random red
           				return waterColor;
 //            			color = texCube(sky, ray).rgb;
 //            			color += float3(pow(max(0.0, dot(light, ray)), 5000.0)) * float3(10.0, 8.0, 6.0);
@@ -268,6 +274,7 @@ Shader "Water/asd"
 				float3 position = i.vertexGlobal;
 				float2 coord = i.uv.xy;//position.xz * 0.5 + 0.5;
 				float4 info = tex2D(_NormalTex, coord);
+				float4 waterHeight = tex2D(_MainTex, i.uv);
 				float3 n = info.rgb;
 				//float3 n = float3(info.b, sqrt(1.0 - dot(info.ba, info.ba)), info.a);
 				float3 incomingRay = mul(unity_WorldToObject, float4(normalize(position - _WorldSpaceCameraPos.xyz),1)).xyz;
@@ -286,64 +293,64 @@ Shader "Water/asd"
           		float3 refractedColor = getSurfaceRayColor(position, refractedRay, _aboveWaterColor.rgb);
 
           		//return float4(refractedColor,1);
+				waterHeight *= (0.5,0.3,0,0.3);
+          		float3 rgb = waterHeight.rgb + _DiffuseColor + ((1-fresnel)*refractedColor + reflectedColor*fresnel)*_SpecularColor;
 
-          		float3 rgb = _DiffuseColor + ((1-fresnel)*refractedColor + reflectedColor*fresnel)*_SpecularColor;
-
-          		return float4(rgb, 0.3);
+          		return float4(rgb, 1.0);
 
 				//return float4(i.normalDir,1.0)	;
 				// sample the texture
-				float4 samplecol = tex2D(_MainTex, i.uv)* _DiffuseColor;
-				//return float4(i.normalDir, 1);
-				float4 col = float4(0,0,0.2,0);
-				float3 lightDir = normalize(_WorldSpaceLightPos0).xyz;//normalize(_WorldSpaceLightPos0).xyz;
-				float4 c_refl = float4 (0.7,0.7,0.7,0);
-				float4 c_refr = float4 (0.5, 0.5, 0.7, 0);
-				//float4 c_refr = tex2D(_FloorTex, (i.uv + _transmitted.xz)*0.2);
-				//float3 cameraPos = float3(_ScreenParams.x,_ScreenParams.y,0);
-				float3 cameraPos = _WorldSpaceCameraPos.xyz;//_WorldSpaceCameraPos.xyz;
-				//return float4(0,i.globalVertex.z,0,1);
-				//return normalize(cameraPos);
-				//if (i.vertex.x - cameraPos.x < 0)
-				//{
-				//	return float4(0,1,0,1);
-				//}
-				/*float3 diffuseReflection = *_LightColor0 * c_refr * max(0.0, dot(i.normalDir, lightDir));
-*/
-				col.a = 0.5 + clamp(0.5*samplecol,0,1).r;
-				/*col.r = samplecol.r*0.5;
-				col.g = samplecol.g*0.5;
-				*/
-				col.r = samplecol.r;
-				col.g = samplecol.g;
-
-				if (transmittedDirection(i.normalDir, lightDir, _refr_index, _refr_index_nt)) {
-					// Schlick stuff
-					//take surface position + travel distance
-					//c_refr = tex2D(_FloorTex, (i.uv + _transmitted.xz*0.05));
-					//c_refr.a = 0;
-					//c_refr *= _SpecularColor;
-					
-					float R0 = pow( ( _refr_index_nt - _refr_index )/( _refr_index_nt + _refr_index) , 2);
-					float c;
-					if (_refr_index <= _refr_index_nt) {
-						c = abs(dot(normalize(i.vertexGlobal.xyz - cameraPos), i.normalDir));
-					}
-					else {
-						c = abs(dot(_transmitted, i.normalDir));
-					}
-					float R = R0+(1.0-R0)*pow((1.0-c),5);
-					//col.a = 0.5 + clamp((1 - R),0,1);
-					col.a = 0.2 + R;
-					return col + (R * c_refl + (1 - R)*c_refr)*_SpecularColor;
-				}
-				 //apply fog
-				UNITY_APPLY_FOG(i.fogCoord, col);
-				/*if(col.a < 0.1) discard;
-            	else col.a = 0.3;*/
-				
-				return c_refl*_SpecularColor + col;
-				//return c_refl + col;
+//				float4 samplecol = tex2D(_MainTex, i.uv)* _DiffuseColor;
+//				//return float4(i.normalDir, 1);
+//				float4 col = float4(0,0,0.2,0);
+//				float3 lightDir = normalize(_WorldSpaceLightPos0).xyz;//normalize(_WorldSpaceLightPos0).xyz;
+//				float4 c_refl = float4 (0.7,0.7,0.7,0);
+//				float4 c_refr = float4 (0.5, 0.5, 0.7, 0);
+//				//float4 c_refr = tex2D(_FloorTex, (i.uv + _transmitted.xz)*0.2);
+//				//float3 cameraPos = float3(_ScreenParams.x,_ScreenParams.y,0);
+//				float3 cameraPos = _WorldSpaceCameraPos.xyz;//_WorldSpaceCameraPos.xyz;
+//				//return float4(0,i.globalVertex.z,0,1);
+//				//return normalize(cameraPos);
+//				//if (i.vertex.x - cameraPos.x < 0)
+//				//{
+//				//	return float4(0,1,0,1);
+//				//}
+//				/*float3 diffuseReflection = *_LightColor0 * c_refr * max(0.0, dot(i.normalDir, lightDir));
+//*/
+//				col.a = 0.5 + clamp(0.5*samplecol,0,1).r;
+//				/*col.r = samplecol.r*0.5;
+//				col.g = samplecol.g*0.5;
+//				*/
+//				col.r = samplecol.r;
+//				col.g = samplecol.g;
+//
+//				if (transmittedDirection(i.normalDir, lightDir, _refr_index, _refr_index_nt)) {
+//					// Schlick stuff
+//					//take surface position + travel distance
+//					//c_refr = tex2D(_FloorTex, (i.uv + _transmitted.xz*0.05));
+//					//c_refr.a = 0;
+//					//c_refr *= _SpecularColor;
+//					
+//					float R0 = pow( ( _refr_index_nt - _refr_index )/( _refr_index_nt + _refr_index) , 2);
+//					float c;
+//					if (_refr_index <= _refr_index_nt) {
+//						c = abs(dot(normalize(i.vertexGlobal.xyz - cameraPos), i.normalDir));
+//					}
+//					else {
+//						c = abs(dot(_transmitted, i.normalDir));
+//					}
+//					float R = R0+(1.0-R0)*pow((1.0-c),5);
+//					//col.a = 0.5 + clamp((1 - R),0,1);
+//					col.a = 0.2 + R;
+//					return col + (R * c_refl + (1 - R)*c_refr)*_SpecularColor;
+//				}
+//				 //apply fog
+//				UNITY_APPLY_FOG(i.fogCoord, col);
+//				/*if(col.a < 0.1) discard;
+//            	else col.a = 0.3;*/
+//				
+//				return c_refl*_SpecularColor + col;
+//				//return c_refl + col;
 
 			}
 			ENDCG
