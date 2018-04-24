@@ -270,7 +270,7 @@ Shader "Water/asd"
 				float4 info = tex2D(_NormalTex, coord);
 				float3 n = info.rgb;
 				//float3 n = float3(info.b, sqrt(1.0 - dot(info.ba, info.ba)), info.a);
-				float3 incomingRay = mul(unity_CameraInvProjection , float4(normalize(position - _WorldSpaceCameraPos.xyz),1)).xyz;
+				float3 incomingRay = mul(unity_WorldToObject, float4(normalize(position - _WorldSpaceCameraPos.xyz),1)).xyz;
 
 				float3 reflectedRay = reflect(incomingRay, n);
 				float3 refractedRay = refract(incomingRay, n, 1.0 / 1.33);

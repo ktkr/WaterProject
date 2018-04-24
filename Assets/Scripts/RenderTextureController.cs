@@ -30,7 +30,6 @@ public class RenderTextureController : MonoBehaviour {
         _texture.Update(1);
         _normalTexture.Update(1);
         _texture.Update(1);
-        _normalTexture.Update(1);
     }
 
     public void UpdateZones()
