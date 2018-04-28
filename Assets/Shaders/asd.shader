@@ -18,6 +18,8 @@ Shader "Water/asd"
 		_PoolHeight("Pool Height", Float) = 5.0
 		_eye("Eye Position", Vector) = (1,1,1)
 		_aboveWaterColor("above water color", Color) = (0.6,0.8,1.0,0)
+		_numUniqueXTiles("Number of tiles along the width", Range(1,10)) = 4
+		_numUniqueYTiles("Number of tiles along the height", Range(1,10)) = 3
 	}
 	SubShader
 	{
@@ -46,10 +48,10 @@ Shader "Water/asd"
 			struct v2f
 			{
 				float2 uv : TEXCOORD0;
-				float3 normalDir : TEXCOORD1;
+				float3 normalDir : TEXCOORD2;
 				UNITY_FOG_COORDS(1)
 				float4 vertex : SV_POSITION;
-				float3 vertexGlobal : TEXCOORD2;
+				float3 vertexGlobal : TEXCOORD1;
 			};
 
 			sampler2D _MainTex;
@@ -65,7 +67,8 @@ Shader "Water/asd"
 			float3 _transmitted;
 			float _refr_index_nt;
 			float _refr_index;
-
+			float _numUniqueXTiles;
+			float _numUniqueYTiles;
 			float _PoolHeight;
 			float3 _eye;
 			float4 _aboveWaterColor;
@@ -90,100 +93,189 @@ Shader "Water/asd"
 				return float2(tNear, tFar);
 			}
 
-			float3 getWallColor(float3 wallPoint) {
+			//get the texture required using global vertex values
+			float3 getWallColor(float2 wallPoint, int face, float height, float4 water, float3 waterNorm) {
 				float scale = 0.5;
-				float3 col;
-				float3 norm;
+				float3 col = float3(0, 0, 0);
+				float3 norm = float3(0, 1, 0);
 				float refr_air = 1.0;
 				float refr_water = 1.33;
-				
+				float xoff = 1.0 / _numUniqueXTiles;
+				float yoff = 1.0 / _numUniqueYTiles;
 				//only interior, must invert normals
 
 				// DEBUG
-//				if (abs(wallPoint.x) > 2) {
-//					return float3(1,0,0);
-//				}
-//
-//				if (abs(wallPoint.z) > 2) {
-//					return float3(1,1,0);
-//				}
+				//				if (abs(wallPoint.x) > 2) {
+				//					return float3(1,0,0);
+				//				}
+				//
+				//				if (abs(wallPoint.z) > 2) {
+				//					return float3(1,1,0);
+				//				}
 
-				//if x boundary hit
-				if (abs(wallPoint.x) > 4.999) {
-					col = tex2D(_FloorTex, wallPoint.yz*0.1);// *0.5 + float2(1.0, 0.5)).rgb;
-					norm = float3(-wallPoint.x, 0, 0);
+
+				//floor
+				if (face == 6) {
+
+					col = tex2D(_FloorTex, float2(wallPoint.x*xoff + xoff, wallPoint.y*yoff + yoff));
+					norm = float3(0, -1, 0);
+
 				}
-				//if z boundary hit
-				else if (abs(wallPoint.z) > 4.999) {
-					col = tex2D(_FloorTex, wallPoint.yx*0.1);// *0.5 + float2(1.0, 0.5)).rgb;
-					norm = float3(0, 0, -wallPoint.z);
-				}
-				else {
-					col = tex2D(_FloorTex, wallPoint.xz*0.1);// *0.5 + float2(0.5, 0.5)).rgb;
-					if (abs(wallPoint.y) > 4.999) {
-						norm = float3(0, -1, 0);
+
+				//walls
+				else if (face > 1) {
+					//col = tex2D(_FloorTex, float2(wallPoint.x * xoff + xoff * (wallPoint.z - 1), wallPoint.y*(yoff)+yoff));
+					if (face == 2) {
+						col = tex2D(_FloorTex, float2(wallPoint.x * xoff + xoff, wallPoint.y*yoff));
+						norm = float3(0, 0, -1);
 					}
-					else {
-						norm = float3(0, 1, 0);
+					//back wall
+					else if (face == 3) {
+						col = tex2D(_FloorTex, float2(wallPoint.x*xoff, wallPoint.y*yoff + yoff));
+						norm = float3(-1, 0, 0);
 					}
+					//front wall
+					else if (face == 4) {
+						col = tex2D(_FloorTex, float2(wallPoint.x*xoff + (xoff * 2), wallPoint.y*yoff + yoff));
+						norm = float3(1, 0, 0);
+					}
+
+					else if (face == 5) {
+						col = tex2D(_FloorTex, float2(1 - (wallPoint.x*xoff + (xoff * 2)), 1 - (wallPoint.y*yoff)));
+						norm = float3(0, 0, 1);
+					}
+
 				}
-				
-				float4 normal123 = tex2D(_NormalTex, wallPoint.xz);
+				//ceiling
+				else if (face == 1) {
+					col = tex2D(_FloorTex, float2(wallPoint.x * xoff + xoff * 3, wallPoint.y*(yoff)+yoff));
+					norm = float3(0, 1, 0);
+				}
+
+
+				/*col = tex2D(_FloorTex, wallPoint.xy);
+				norm = float3(0, 1, 0);*/
+				//float4 normal123 = tex2D(_NormalTex, wallPoint.xy);
 				//calc refracted light and diffuse light
-				float3 refr = -refract(-_WorldSpaceLightPos0, normal123.xyz, refr_air / refr_water);
-				float diffuse = max(0, dot(refr, norm));
+				float3 refr = -refract(-_WorldSpaceLightPos0, waterNorm, refr_air / refr_water);
+				float diffuse = max(0, dot(refr, norm.xyz));
 
-				float4 water = tex2D(_NormalTex, wallPoint.xz * 0.5 + float2(0.5,0.5));
+				//float4 water = tex2D(_WaterTex, wallPoint.xy);// * 0.5 + float2(0.5, 0.5));
 
 				//only render caustic when the wall portion is below the water
-				if (wallPoint.y < water.r) {
-					
-					float4 caustic = tex2D(_CausticTex, 0.75*(wallPoint.xz - wallPoint.y * refr.xz / refr.y)* 0.5 + float2(0.5,0.5));
+				if (height < water.g*0.05) {
+
+					float4 caustic = tex2D(_CausticTex, 0.75*(wallPoint.xy - wallPoint.y * refr.xz / refr.y)* 0.5 + float2(0.5, 0.5));
 					scale += diffuse * caustic.r * 2.0 * caustic.g;
+
 				}
+				
 				else {
-					float2 t = intersectCube(wallPoint, refr, float3(-5, -_PoolHeight, -5.0), float3(5, 5, 5));
-					//wtf is this color calc
-					diffuse *= 1.0 / (1.0 + exp(-200.0 / (1.0 + 10.0 * (t.y - t.x)) * (wallPoint.y + refr.y *t.y - 7.0 / 12.0)));
+					float2 t = intersectCube(float3(wallPoint, face), refr, float3(-5, -_PoolHeight, -5.0), float3(5, _PoolHeight, 5));
+					//TODO the 7/12 should be changed to the height of the cube
+					diffuse *= 1.0 / (1.0 + exp(-200.0 / (1.0 + 10.0 * (t.y - t.x)) * (height + refr.y *t.y - 2.5)));
 
 					scale += diffuse * 0.5;
-				
+
 				}
 
 				return col * scale;
 
 			}
+			//assume pool is centered at 0, cube is scaled to 10x5x10
+			int getFace(float3 hit) {
+				if (hit.x > 4.99) {
+					return 2;
+				}
 
-			float3 getSurfaceRayColor(float3 origin, float3 ray, float3 waterColor) {
-        		float3 color;
+				else if (hit.x < -4.99) {
+					return 5;
+				}
+				else if (hit.z > 4.99) {
+					return 3;
+				}
+				else if (hit.z < -4.99) {
+					return 4;
+				}
+				//floor
+				else if (hit.y < -4.99) {
+					return 6;
+				}
+				//ceiling
+				else if (hit.y > 4.99) {
+					return 1;
+				}
 
+				return 0;
+				//else if (hit.x < -4.99) {
+				//	return 
+				//}
+
+			}
+
+
+			float3 getSurfaceRayColor(float3 origin, float3 ray, float3 waterColor,float3 norm) {
+				float3 color = float3(0, 0, 0);
+				
 //        		if (ray.y < -0.8) {
 //        			return (1,0,1);
 //        		}
-//
-        		if (ray.y < -0.2) {
-          			float2 t = intersectCube(origin, ray, float3(-5.0, -_PoolHeight, -5.0), float3(5.0, 5.0, 5.0));
-          			color = getWallColor(origin + ray * t.y);
-        		} 
-				else {
-          			float2 t = intersectCube(origin, ray, float3(-5.0, -_PoolHeight, -5.0), float3(5.0, 5.0, 5.0));
-          			float3 hit = origin + ray * t.y;
-          			if (hit.y < 7.0 / 12.0) {
-            			color = getWallColor(hit);
-          			} 
-					else {
-          				//color = float3(1,0,0); // random red
-          				return waterColor;
-//            			color = texCube(sky, ray).rgb;
-//            			color += float3(pow(max(0.0, dot(light, ray)), 5000.0)) * float3(10.0, 8.0, 6.0);
-          			}
-        		}
-
-				if (ray.y < 0.0) 
-				{ 
-					color *= waterColor; 
+				float2 t = intersectCube(origin, ray, float3(-5.0, -_PoolHeight, -5.0), float3(5.0, _PoolHeight, 5.0));
+				//color = getWallColor(origin + ray * t.y);
+				float3 hit = origin + ray * t.y;
+				int face = getFace(hit);
+				//reflections and refractions
+				//sorry... this is hard-coded due to lack of time. there's a face order mistake.
+				
+				if (face == 1) {
+					color = getWallColor(float2(-hit.x + 5,-hit.z+5)*0.1, face, (hit.y + 5)*0.1, float4(origin, 1), norm);
 				}
-        		return color;
+				else if (face == 2) {
+					color = getWallColor(float2(hit.z + 5, hit.y + 5)*0.1, 3, (hit.x + 5)*0.1, float4(origin, 1), norm);
+				}
+				else if (face == 3) {
+					color = getWallColor(float2(5-hit.x, hit.y + 5)*0.1, 2, (hit.x + 5)*0.1, float4(origin, 1), norm);
+				}
+				else if (face == 4) {
+					color = getWallColor(float2(-hit.x + 5, -hit.y + 5)*0.1, 5, (hit.x + 5)*0.1, float4(origin, 1), norm);
+				}
+				else if (face == 5) {
+					color = getWallColor(float2(-hit.z + 5, hit.y + 5)*0.1, 4, (hit.x + 5)*0.1, float4(origin, 1), norm);
+				}
+				else if (face == 6) {
+					color = getWallColor(float2(hit.x + 5, hit.z + 5)*0.1, face, (hit.x + 5)*0.1, float4(origin, 1), norm);
+				}
+				
+					//color *= 10;
+				
+				
+				//use different hit.xz,hit.xy etc values to compute uv then done.
+				/*if (face == 2) {
+					color = getWallColor(float2(hit.y + 5, hit.z + 5)*0.1,face, (hit.x + 5)*0.1, float4(origin, 1), norm);
+				}
+				else if (face == 3) {
+					color = getWallColor(float2(hit.z + 5, -hit.y + 5)*0.1, face, (hit.y + 5)*0.1, float4(origin, 1), norm);
+				}*/
+				//if (face == 2 || face == 5) {
+				//	color = getWallColor((hit.xz + 5)*0.1, face, (hit.y + 5)*0.1, float4(origin, 1), norm);
+				//}
+				//else if (face == 3 || face == 4) {
+				//	color = getWallColor((hit.zx + 5)*0.1, face, (hit.y + 5)*0.1, float4(origin, 1), norm);
+				//}
+				//else if (face == 6){
+				//	color = getWallColor(float2(-hit.x + 5,hit.z+5)*0.1, face, (hit.y + 5)*0.1, float4(origin, 1), norm);
+				//}
+				//else if (face == 1) {
+				//	//color = getWallColor((hit.xz - 5)*0.1, face, (hit.y + 5)*0.1, float4(origin, 1), norm)*1.5;
+				//	color = getWallColor((hit.xz + 5)*0.1, 1, (hit.y + 5)*0.1, float4(origin, 1), norm)*10;
+				//}
+				//if going into water
+				if (ray.y < 0.0) {
+					color *= waterColor;
+				}
+				
+				return color;
+
       		}
 
 			v2f vert (appdata v)
@@ -207,7 +299,10 @@ Shader "Water/asd"
 				
 
 				o.normalDir = UnityObjectToWorldNormal(tex2Dlod(_NormalTex, float4(v.uv.xy, 0, 0)));
-				v.vertex += float4(0, temp.x*_HeightMultiplier, 0, 0);
+				v.vertex.y += temp.r;
+				v.vertex.y *= _HeightMultiplier;
+				//v.vertex.y *= _HeightMultiplier;
+				//v.vertex += float4(0, temp.r*_HeightMultiplier, 0, 0);
 				o.vertexGlobal = v.vertex;
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
@@ -274,27 +369,32 @@ Shader "Water/asd"
 				float3 position = i.vertexGlobal;
 				float2 coord = i.uv.xy;//position.xz * 0.5 + 0.5;
 				float4 info = tex2D(_NormalTex, coord);
-				float4 waterHeight = tex2D(_MainTex, i.uv);
-				float3 n = info.rgb;
+				float4 waveCol = tex2D(_MainTex, i.uv);// i.vertexGlobal.xy;//(i.vertexGlobal,0);
+				float3 n = normalize(info.rgb);
 				//float3 n = float3(info.b, sqrt(1.0 - dot(info.ba, info.ba)), info.a);
-				float3 incomingRay = mul(unity_WorldToObject, float4(normalize(position - _WorldSpaceCameraPos.xyz),1)).xyz;
-
+				float3 incomingRay = mul(unity_WorldToObject, float4(normalize(position - _WorldSpaceCameraPos.xyz),1)).xyz;//float4(normalize(position - _WorldSpaceCameraPos.xyz),1).xyz;
+				//if (waterHeight.r > 1) {
+				//	return float4(1, 0, 0, 1);
+				//}
 				float3 reflectedRay = reflect(incomingRay, n);
 				float3 refractedRay = refract(incomingRay, n, 1.0 / 1.33);
-				
-				float R0 =  pow((1.33 - 1) / (2.33), 2);
+				float R0 =  pow((1/7), 2);
+				//TODO set c value if nt > n as well.
 				float c = abs(dot(incomingRay, n));
 				float fresnel = R0 + (1.0 - R0)*pow((1.0 - c), 5);
 				//float d = pow(1.0 - dot(n, -incomingRay), 3.0);
 				//float fresnel = (1-d)*0.25 + 1.0 * d;
 				//c = abs(dot(normalize(i.vertexGlobal.xyz - cameraPos), i.normalDir));
-
-				float3 reflectedColor = getSurfaceRayColor(position, reflectedRay, _aboveWaterColor.rgb);
-          		float3 refractedColor = getSurfaceRayColor(position, refractedRay, _aboveWaterColor.rgb);
-
-          		//return float4(refractedColor,1);
-				waterHeight *= (0.5,0.3,0,0.3);
-          		float3 rgb = waterHeight.rgb + _DiffuseColor + ((1-fresnel)*refractedColor + reflectedColor*fresnel)*_SpecularColor;
+				
+				float3 reflectedColor = getSurfaceRayColor(position, reflectedRay, _aboveWaterColor.rgb,n);
+          		float3 refractedColor = getSurfaceRayColor(position, refractedRay, _aboveWaterColor.rgb,n);
+				//reflectedColor = float3(0, 0, 0);
+				//refractedColor = float3(0, 0, 0);
+				//AMBIENT HACK by me
+				//waterHeight *= float4(0.0001,0.0001,0.0,1.0);
+				
+				//float ndotl = dot(n, -_WorldSpaceLightPos0);
+          		float3 rgb = waveCol.rgb*0.1 + _DiffuseColor.rgb + ((1-fresnel)*refractedColor.rgb + reflectedColor.rgb*fresnel)*_SpecularColor.rgb;
 
           		return float4(rgb, 1.0);
 

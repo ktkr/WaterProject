@@ -61,7 +61,7 @@ public class RenderTextureController : MonoBehaviour {
                     clickZone.rotation = 0.0f;
                     //update the "event" in the list
                     clickZone.updateZoneCenter = new Vector2(hit.textureCoord.x, 1f - hit.textureCoord.y);
-                    clickZone.updateZoneSize = new Vector2(0.01f, 0.01f);
+                    clickZone.updateZoneSize = new Vector2(0.03f, 0.03f);
 
 
                     _texture.SetUpdateZones(new CustomRenderTextureUpdateZone[] { zone, clickZone });
