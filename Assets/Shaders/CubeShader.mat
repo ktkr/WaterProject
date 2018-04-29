@@ -43,4 +43,4 @@ Material:
     - _numUniqueXTiles: 4
     - _numUniqueYTiles: 3
     m_Colors:
-    - _UnderWaterColor: {r: 0.45588237, g: 0.5947261, b: 1, a: 1}
+    - _UnderWaterColor: {r: 0.4750757, g: 0.5170848, b: 0.6397059, a: 1}

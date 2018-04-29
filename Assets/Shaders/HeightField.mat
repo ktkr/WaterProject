@@ -38,7 +38,7 @@ Material:
     - _CameraPositionX: 0
     - _CameraPositionY: 0
     - _CameraPositionZ: 0
-    - _HeightMultiplier: 0.246
+    - _HeightMultiplier: 0.323
     - _MainTexLength: 256
     - _MainTexWidth: 256
     - _PoolHeight: 5
@@ -47,7 +47,7 @@ Material:
     - _refr_index: 1
     - _refr_index_nt: 1.33
     m_Colors:
-    - _DiffuseColor: {r: 0.51157004, g: 0.52734005, b: 0.83823526, a: 0}
+    - _DiffuseColor: {r: 0.3443988, g: 0.39490366, b: 0.5147059, a: 0}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 0}
     - _aboveWaterColor: {r: 0.6764706, g: 0.6764706, b: 0.6764706, a: 0}
     - _eye: {r: 1, g: 1, b: 1, a: 1}
