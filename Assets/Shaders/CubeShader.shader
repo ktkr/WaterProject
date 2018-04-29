@@ -85,29 +85,6 @@
 				//					return float3(1,1,0);
 				//				}
 
-
-				//wtf did we manage to do!?!
-				//if x boundary hit
-				//if (abs(wallPoint.x) > 0.499) {
-				//	//col = tex2D(_FloorTex, wallPoint.yz*0.5 + float2(1.0,0.5));// *0.5 + float2(1.0, 0.5)).rgb;
-				//	col = tex2D(_FloorTex, wallPoint.yz);
-				//	norm = float3(-wallPoint.x, 0, 0);
-				//}
-				////if z boundary hit
-				//else if (abs(wallPoint.z) > 0.499) {
-				//	col = tex2D(_FloorTex, wallPoint.yx);// *0.5 + float2(1.0, 0.5)).rgb;
-				//	norm = float3(0, 0, -wallPoint.z);
-				//}
-				//else {
-				//	col = tex2D(_FloorTex, wallPoint.xz);//*0.5 + float2(0.5, 0.5)).rgb;
-				//	if (abs(wallPoint.y) > 0.499) {
-				//		norm = float3(0, -1, 0);
-				//	}
-				//	else {
-				//		norm = float3(0, 1, 0);
-				//	}
-				//}
-				
 				//floor
 				if (face == 6) {
 
@@ -158,23 +135,49 @@
 				//float4 water = tex2D(_WaterTex, wallPoint.xy);// * 0.5 + float2(0.5, 0.5));
 
 				//only render caustic when the wall portion is below the water
+				float4 caustic = float4(0, 0, 0, 1);
 				if (height < water.g*0.05) {
-
-					float4 caustic = tex2D(_CausticTex, 0.75*(wallPoint.xy - wallPoint.y * refr.xz / refr.y)* 0.5 + float2(0.5, 0.5));
-					scale += diffuse * caustic.r * 2.0 * caustic.g;
 					
+					if (face == 6) {
+						caustic = tex2D(_CausticTex, float2(wallPoint.x, 1.0 - wallPoint.y)*refr.xz/refr.y);//*refr.xy);
+
+					}
+
+					//couldn't figure out how to put the caustic on the wall
+					
+					else if (face == 2) {
+						caustic = tex2D(_CausticTex, 0.75*float2(wallPoint.x, 1 - wallPoint.y)*refr.xz/refr.y);
+					}
+					else if (face == 3) {
+						caustic = tex2D(_CausticTex, float2(1-wallPoint.x, 1 - wallPoint.y)*refr.xz/refr.y);
+					}
+					else if (face == 4) {
+						caustic = tex2D(_CausticTex, float2(wallPoint.x, 1 - wallPoint.y)*refr.xz/refr.y);
+					}
+					else if (face == 5) {
+						caustic = tex2D(_CausticTex, float2(1 - wallPoint.x, 1 - wallPoint.y)*refr.xz/refr.y);
+					}
+
+
+					//float4 caustic = tex2D(_CausticTex, wallPoint.xy);//0.75*(wallPoint.xy - wallPoint.y * refr.xz / refr.y)); //float2(0.5, 0.5));
+					if (face != 1) {
+						//col *= caustic.r*caustic.g;
+						scale += diffuse * caustic.r * 2.0 * caustic.g;
+					}
 				}
 				else {
-					float2 t = intersectCube(float3(wallPoint,face), refr, float3(-5, -_PoolHeight, -5.0), float3(5, 5, 5));
-					//wtf is this color calc
-					diffuse *= 1.0 / (1.0 + exp(-200.0 / (1.0 + 10.0 * (t.y - t.x)) * (height + refr.y *t.y - 2.5)));
-
+					//float2 t = intersectCube(float3(wallPoint,face), refr, float3(-5, -_PoolHeight, -5.0), float3(5, _PoolHeight, 5));
+					//diffuse *= 1.0 / (1.0 + exp(-200.0 / (1.0 + 10.0 * (wallPoint.y - wallPoint.x)) * (height + refr.y *wallPoint.y-2)));
+					
 					scale += diffuse * 0.5;
 
 				}
-
-				return col * scale;
-
+				if (face != 1) {
+					return col*scale;
+				}
+				else {
+					return float4(col.rgb,0);
+				}
 			}
 
 
@@ -196,13 +199,14 @@
 				int face = 1;
 				float4 info;
 				float3 waterNorm;
-				//floor
+				//ceiling
 				if (i.normalDir.y > 0.999) {
 					face = 1;
 					info = tex2D(_WaterTex, float2(i.vertexGlobal.x, i.vertexGlobal.z));
+					//info = float4(0, 0, 0, 1);
 					waterNorm = tex2D(_NormalTex, float2(i.vertexGlobal.x, i.vertexGlobal.z));
 				}
-				//ceiling
+				//floor
 				else if (i.normalDir.y < -0.999) {
 					face = 6;
 					info = tex2D(_WaterTex, float2(i.vertexGlobal.x, i.vertexGlobal.z));

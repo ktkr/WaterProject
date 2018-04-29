@@ -12,6 +12,9 @@ public class RenderTextureController : MonoBehaviour {
 
     [SerializeField]
     public CustomRenderTexture _normalTexture;
+
+    [SerializeField]
+    public CustomRenderTexture _causticTexture;
     
     void Start()
     {
@@ -19,16 +22,17 @@ public class RenderTextureController : MonoBehaviour {
             //Debug.LogError("A texture or a render texture are missing, assign them.");
 		_texture.Initialize();
         _normalTexture.Initialize();
+        _causticTexture.Initialize();
     }
     void Update()
     {
-        //Graphics.Blit(aTexture, rTex,m,-1);
-        //m.SetTexture("_HeightMap",rTex);
+
         _texture.ClearUpdateZones();
         UpdateZones();
         //UpdateZones(Input.mousePosition);
         _texture.Update(1);
         _normalTexture.Update(1);
+        _causticTexture.Update(1);
         _texture.Update(1);
     }
 
