@@ -74,29 +74,15 @@
 				float refr_water = 1.33;
 				float xoff = 1.0 / _numUniqueXTiles;
 				float yoff = 1.0 / _numUniqueYTiles;
-				//only interior, must invert normals
-
-				// DEBUG
-				//				if (abs(wallPoint.x) > 2) {
-				//					return float3(1,0,0);
-				//				}
-				//
-				//				if (abs(wallPoint.z) > 2) {
-				//					return float3(1,1,0);
-				//				}
 
 				//floor
 				if (face == 6) {
-
 					col = tex2D(_FloorTex, float2(wallPoint.x*xoff + xoff, wallPoint.y*yoff + yoff));
 					norm = float3(0,-1, 0);
-
 				}
 
 				//walls
 				else if (face > 1) {
-
-					//col = tex2D(_FloorTex, float2(wallPoint.x * xoff + xoff * (wallPoint.z - 1), wallPoint.y*(yoff)+yoff));
 					if (face == 2) {
 						col = tex2D(_FloorTex, float2(wallPoint.x * xoff + xoff, wallPoint.y*yoff));
 						norm = float3(0, 0, -1);
@@ -138,26 +124,46 @@
 				float4 caustic = float4(0, 0, 0, 1);
 				if (height < water.g*0.05) {
 					
+					//if (face == 6) {
+					//	caustic = tex2D(_CausticTex, float2(wallPoint.x, 1.0 - wallPoint.y)*refr.xz/refr.y);//*refr.xy);
+
+					//}
+
+					////couldn't figure out how to put the caustic on the wall
+					//
+					//else if (face == 2) {
+					//	caustic = tex2D(_CausticTex, float2(wallPoint.x, 1 - wallPoint.y)*refr.xz/refr.y);
+					//}
+					//else if (face == 3) {
+					//	caustic = tex2D(_CausticTex, float2(1-wallPoint.x, 1 - wallPoint.y)*refr.xz/refr.y);
+					//}
+					//else if (face == 4) {
+					//	caustic = tex2D(_CausticTex, float2(wallPoint.x, 1 - wallPoint.y)*refr.xz/refr.y);
+					//}
+					//else if (face == 5) {
+					//	caustic = tex2D(_CausticTex, float2(1 - wallPoint.x, 1 - wallPoint.y)*refr.xz/refr.y);
+					//}
+					if (wallPoint.x > 0.75 && wallPoint.y > 0.75) {
+						
+					}
 					if (face == 6) {
-						caustic = tex2D(_CausticTex, float2(wallPoint.x, 1.0 - wallPoint.y)*refr.xz/refr.y);//*refr.xy);
+						//return float4(1-wallPoint.y, 0, 0, 1);
+						
+						caustic = tex2D(_WaterTex, float2(wallPoint.x, (1 - wallPoint.y)));//*length(refr.xz) / refr.y;
 
 					}
-
-					//couldn't figure out how to put the caustic on the wall
-					
-					else if (face == 2) {
-						caustic = tex2D(_CausticTex, 0.75*float2(wallPoint.x, 1 - wallPoint.y)*refr.xz/refr.y);
-					}
-					else if (face == 3) {
-						caustic = tex2D(_CausticTex, float2(1-wallPoint.x, 1 - wallPoint.y)*refr.xz/refr.y);
-					}
-					else if (face == 4) {
-						caustic = tex2D(_CausticTex, float2(wallPoint.x, 1 - wallPoint.y)*refr.xz/refr.y);
-					}
-					else if (face == 5) {
-						caustic = tex2D(_CausticTex, float2(1 - wallPoint.x, 1 - wallPoint.y)*refr.xz/refr.y);
-					}
-
+					//else if (face == 2) {
+					//	caustic = tex2D(_WaterTex, float2(wallPoint.x, 0.5*wallPoint.y) );//*length(refr.xz) / refr.y;;
+					//}
+					//else if (face == 3) {
+					//	caustic = tex2D(_WaterTex, float2(1-wallPoint.x, 1 - wallPoint.y));
+					//}
+					//else if (face == 4) {
+					//	caustic = tex2D(_WaterTex, float2(1-wallPoint.x, 0.5-wallPoint.y*0.5));
+					//}
+					//else if (face == 5) {
+					//	caustic = tex2D(_WaterTex, float2(1 - wallPoint.x, 1 - wallPoint.y));
+					//}
 
 					//float4 caustic = tex2D(_CausticTex, wallPoint.xy);//0.75*(wallPoint.xy - wallPoint.y * refr.xz / refr.y)); //float2(0.5, 0.5));
 					if (face != 1) {
@@ -173,7 +179,7 @@
 
 				}
 				if (face != 1) {
-					return col*scale;
+					return col * scale + caustic.r*0.5;//*caustic.r*0.5;
 				}
 				else {
 					return float4(col.rgb,0);
