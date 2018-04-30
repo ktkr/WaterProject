@@ -1,6 +1,6 @@
 ﻿// Upgrade NOTE: replaced '_World2Object' with 'unity_WorldToObject'
 
-Shader "Water/asd"
+Shader "Water/WaterSpecular"
 {
 	Properties
 	{
